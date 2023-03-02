@@ -1,9 +1,6 @@
 name: "Terraform PR Build"
 
 on:
-  pull_request:
-    branches:
-      - main
   workflow_call:
     inputs:
       solutionDirectory:
