@@ -17,8 +17,6 @@ on:
         required: true
       tenant_id:
         required: true
-      sonar_key:
-        required: true
 
 jobs:
   terraform:
@@ -37,14 +35,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-
-      - name: SonarCloud Scan
-        uses: sonarsource/sonarcloud-github-action@master
-        env:
-          GITHUB_TOKEN: ${{ secrets.gh_token }}
-          SONAR_TOKEN: ${{ secrets.sonar_key}}
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v1
