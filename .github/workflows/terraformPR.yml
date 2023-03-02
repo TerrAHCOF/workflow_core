@@ -17,6 +17,8 @@ on:
         required: true
       tenant_id:
         required: true
+      sonar_key:
+        required: true
 
 jobs:
   terraform:
@@ -27,7 +29,6 @@ jobs:
       ARM_CLIENT_SECRET: ${{ secrets.client_secret }}
       ARM_SUBSCRIPTION_ID: ${{ secrets.subscription_id }}
       ARM_TENANT_ID: ${{ secrets.tenant_id }}
-
     defaults:
       run:
         shell: bash
@@ -36,6 +37,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: SonarCloud Scan
+        uses: sonarsource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.gh_token }}
+          SONAR_TOKEN: ${{ secrets.sonar_key}}
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v1
@@ -46,11 +55,11 @@ jobs:
 
       - name: Terraform Validate
         id: validate
-        run: terraform validate -no-color
+        run: terraform validate
 
       - name: Terraform Plan
         id: plan
-        run: terraform plan -no-color -input=false
+        run: terraform plan -input=false
         continue-on-error: true
 
       - name: Update Pull Request
@@ -61,10 +70,11 @@ jobs:
         with:
           github-token: ${{ secrets.gh_token }}
           script: |
-            const output = `#### Terraform Format and Style 🖌\`${{ steps.fmt.outcome }}\`
-            #### Terraform Initialization ⚙️\`${{ steps.init.outcome }}\`
+            const output = `#### Terraform Initialization ⚙️\`${{ steps.init.outcome }}\`
             #### Terraform Plan 📖\`${{ steps.plan.outcome }}\`
             #### Terraform Validation 🤖\`${{ steps.validate.outcome }}\`
+            #### Terraform Apply 🤖\`${{ steps.apply.outcome }}\`
+            #### Terraform Destroy 🤖\`${{ steps.destroy.outcome }}\`
 
             <details><summary>Show Plan</summary>
 
@@ -93,6 +103,7 @@ jobs:
         continue-on-error: true
 
       - name: Terraform Destroy
+        id: destroy
         run: terraform destroy -auto-approve
 
       - name: Terraform Apply Status
