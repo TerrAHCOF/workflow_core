@@ -1,9 +1,10 @@
 name: "Versioning"
 
 on:
-  push:
-    branches:
-      - main
+  workflow_call:
+    secrets:
+      gh_token:
+        required: true
 
 jobs:
   build:
@@ -16,7 +17,7 @@ jobs:
         id: tag_version
         uses: mathieudutour/github-tag-action@v6.1
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ secrets.gh_token }}
       - name: Create a GitHub release
         uses: ncipollo/release-action@v1
         with:
