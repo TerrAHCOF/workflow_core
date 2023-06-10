@@ -49,43 +49,8 @@ jobs:
 
       - name: Terraform Plan
         id: plan
-        run: terraform plan -input=false
+        run: terraform plan -input=false -no-color -out tf.plan
         continue-on-error: true
-
-      - name: Update Pull Request
-        uses: actions/github-script@v6
-        if: github.event_name == 'pull_request'
-        env:
-          PLAN: "terraform\n${{ steps.plan.outputs.stdout }}"
-        with:
-          github-token: ${{ secrets.gh_token }}
-          script: |
-            const output = `#### Terraform Initialization ⚙️\`${{ steps.init.outcome }}\`
-            #### Terraform Plan 📖\`${{ steps.plan.outcome }}\`
-            #### Terraform Validation 🤖\`${{ steps.validate.outcome }}\`
-            #### Terraform Apply 🤖\`${{ steps.apply.outcome }}\`
-            #### Terraform Destroy 🤖\`${{ steps.destroy.outcome }}\`
-
-            <details><summary>Show Plan</summary>
-
-            \`\`\`\n
-            ${process.env.PLAN}
-            \`\`\`
-
-            </details>
-
-            *Pushed by: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
-
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: output
-            })
-
-      - name: Terraform Plan Status
-        if: steps.plan.outcome == 'failure'
-        run: exit 1
 
       - name: Terraform Apply
         id: apply
@@ -95,6 +60,54 @@ jobs:
       - name: Terraform Destroy
         id: destroy
         run: terraform destroy -auto-approve
+
+      - name: Update Pull Request
+        uses: actions/github-script@v6
+        if: github.event_name == 'pull_request'
+        env:
+          PLAN: "terraform\n${{ steps.plan.outputs.stdout }}"
+        with:
+          github-token: ${{ secrets.gh_token }}
+          script: |
+            const fs = require("fs");
+            const plan = fs.readFileSync("/tmp/plan.txt", "utf8");
+            const maxGitHubBodyCharacters = 65536;
+
+            function chunkSubstr(str, size) {
+              const numChunks = Math.ceil(str.length / size)
+              const chunks = new Array(numChunks)
+              for (let i = 0, o = 0; i < numChunks; ++i, o += size) {
+                chunks[i] = str.substr(o, size)
+              }
+              return chunks
+            }
+
+            var plans = chunkSubstr(plan, maxGitHubBodyCharacters); 
+            for (let i = 0; i < plans.length; i++) {
+              const output = `### Terrafrom Plan Part # ${i + 1}
+              #### Terraform Initialization ⚙️\`${{ steps.init.outcome }}\`
+              #### Terraform Plan 📖\`${{ steps.plan.outcome }}\`
+              #### Terraform Validation 🤖\`${{ steps.validate.outcome }}\`
+              #### Terraform Apply 🤖\`${{ steps.apply.outcome }}\`
+              #### Terraform Destroy 🤖\`${{ steps.destroy.outcome }}\`
+
+              <details><summary>Show Plan</summary>
+
+              \`\`\`\n
+              ${plans[i]}
+              \`\`\`
+
+              </details>
+
+              *Pushed by: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
+
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: output
+              })
+            }
 
       - name: Terraform Apply Status
         if: steps.apply.outcome == 'failure'
