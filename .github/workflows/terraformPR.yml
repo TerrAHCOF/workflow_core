@@ -52,6 +52,11 @@ jobs:
         run: terraform plan -input=false -no-color -out tf.plan
         continue-on-error: true
 
+      - name: Terraform Show
+        id: show
+        run: terraform show -no-color tf.plan 2>&1 > plan.txt
+        shell: bash
+
       - name: Terraform Apply
         id: apply
         run: terraform apply -auto-approve -input=false
@@ -70,7 +75,7 @@ jobs:
           github-token: ${{ secrets.gh_token }}
           script: |
             const fs = require("fs");
-            const plan = fs.readFileSync("/tmp/plan.txt", "utf8");
+            const plan = fs.readFileSync("plan.txt", "utf8");
             const maxGitHubBodyCharacters = 65536;
 
             function chunkSubstr(str, size) {
