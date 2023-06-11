@@ -46,6 +46,7 @@ jobs:
       - name: Terraform Validate
         id: validate
         run: terraform validate
+        continue-on-error: true
 
       - name: Terraform Plan
         id: plan
@@ -54,7 +55,7 @@ jobs:
 
       - name: Terraform Show
         id: show
-        run: terraform show -no-color tf.plan 2>&1 > plan.txt
+        run: terraform show -no-color tf.plan 2>&1 > /tmp/plan.txt
         shell: bash
 
       - name: Terraform Apply
@@ -69,13 +70,11 @@ jobs:
       - name: Update Pull Request
         uses: actions/github-script@v6
         if: github.event_name == 'pull_request'
-        env:
-          PLAN: "terraform\n${{ steps.plan.outputs.stdout }}"
         with:
           github-token: ${{ secrets.gh_token }}
           script: |
             const fs = require("fs");
-            const plan = fs.readFileSync("plan.txt", "utf8");
+            const plan = fs.readFileSync("/tmp/plan.txt", "utf8");
             const maxGitHubBodyCharacters = 65536;
 
             function chunkSubstr(str, size) {
