@@ -57,7 +57,6 @@ jobs:
         id: show
         run: terraform show -no-color tf.plan 2>&1 > /tmp/plan.txt
         shell: bash
-        continue-on-error: true
 
       - name: Terraform Apply
         id: apply
