@@ -50,7 +50,7 @@ jobs:
 
       - name: Terraform Plan
         id: plan
-        run: terraform plan -input=false -no-color -out ${{ inputs.solutionDirectory }}/tf.plan
+        run: terraform plan -input=false -no-color -out tf.plan
         continue-on-error: true
 
       - name: Terraform Show
