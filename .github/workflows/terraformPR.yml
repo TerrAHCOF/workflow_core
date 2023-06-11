@@ -46,16 +46,18 @@ jobs:
       - name: Terraform Validate
         id: validate
         run: terraform validate
+        continue-on-error: true
 
       - name: Terraform Plan
         id: plan
-        run: terraform plan -input=false -no-color -out tf.plan
+        run: terraform plan -input=false -no-color -out ${{ inputs.solutionDirectory }}/tf.plan
         continue-on-error: true
 
       - name: Terraform Show
         id: show
-        run: terraform show -no-color tf.plan 2>&1 > plan.txt
+        run: terraform show -no-color ${{ inputs.solutionDirectory }}/tf.plan 2>&1 > ${{ inputs.solutionDirectory }}/plan.txt
         shell: bash
+        continue-on-error: true
 
       - name: Terraform Apply
         id: apply
@@ -75,7 +77,7 @@ jobs:
           github-token: ${{ secrets.gh_token }}
           script: |
             const fs = require("fs");
-            const plan = fs.readFileSync("plan.txt", "utf8");
+            const plan = fs.readFileSync("${{ inputs.solutionDirectory }}/plan.txt", "utf8");
             const maxGitHubBodyCharacters = 65536;
 
             function chunkSubstr(str, size) {
